@@ -1,6 +1,7 @@
 const Application = require("../models/Application");
 const StudentProfile = require("../models/StudentProfile");
 const PlacementDrive = require("../models/PlacementDrive");
+const Company = require("../models/Company");
 
 const {
   checkEligibility,
@@ -132,6 +133,52 @@ const getMyApplications = async (req, res) => {
   }
 };
 
+const getRecruiterApplications = async (req, res) => {
+  try {
+    // Find company assigned to recruiter
+    const company = await Company.findOne({
+      recruiter: req.user.id,
+    });
+
+    if (!company) {
+      return res.status(404).json({
+        message: "No company assigned to this recruiter",
+      });
+    }
+
+    // Find applications for this company's drives
+    const applications = await Application.find()
+      .populate({
+        path: "drive",
+        match: { company: company._id },
+        populate: {
+          path: "company",
+          select: "name logoUrl industry location",
+        },
+      })
+      .populate({
+        path: "student",
+        select:
+          "rollNumber course branch cgpa tenthPercentage twelfthPercentage skills projects internships backlogs resumeUrl",
+      })
+      .sort({ createdAt: -1 });
+
+    // Remove applications whose drive doesn't belong to recruiter
+    const filteredApplications = applications.filter(
+      (application) => application.drive !== null
+    );
+
+    return res.status(200).json({
+      count: filteredApplications.length,
+      applications: filteredApplications,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch recruiter applications",
+      error: error.message,
+    });
+  }
+};
 const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -149,6 +196,7 @@ const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    // Find application
     const application = await Application.findById(
       req.params.applicationId
     );
@@ -159,6 +207,55 @@ const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    // Allowed status transitions
+    const allowedTransitions = {
+      applied: ["shortlisted", "rejected"],
+      shortlisted: ["selected", "rejected"],
+      selected: [],
+      rejected: [],
+    };
+
+    const currentStatus = application.status;
+
+    if (!allowedTransitions[currentStatus].includes(status)) {
+      return res.status(400).json({
+        message: `Cannot change status from ${currentStatus} to ${status}`,
+      });
+    }
+
+    // Recruiter ownership check
+    if (req.user.role === "recruiter") {
+      const drive = await PlacementDrive.findById(
+        application.drive
+      );
+
+      if (!drive) {
+        return res.status(404).json({
+          message: "Placement drive not found",
+        });
+      }
+
+      const company = await Company.findById(
+        drive.company
+      );
+
+      if (!company) {
+        return res.status(404).json({
+          message: "Company not found",
+        });
+      }
+
+      if (
+        company.recruiter?.toString() !== req.user.id
+      ) {
+        return res.status(403).json({
+          message:
+            "You can only update applications for your assigned company",
+        });
+      }
+    }
+
+    // Update status
     application.status = status;
 
     await application.save();
@@ -167,7 +264,6 @@ const updateApplicationStatus = async (req, res) => {
       message: "Application status updated successfully",
       application,
     });
-
   } catch (error) {
     res.status(500).json({
       message: "Failed to update application status",
@@ -179,4 +275,5 @@ module.exports = {
   applyForDrive,
   getMyApplications,
   updateApplicationStatus,
+  getRecruiterApplications,
 };
