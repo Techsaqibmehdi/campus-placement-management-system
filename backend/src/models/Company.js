@@ -33,6 +33,11 @@ const companySchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    recruiter: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null,
+},
   },
   {
     timestamps: true,

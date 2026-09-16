@@ -1,4 +1,5 @@
 const PlacementDrive = require("../models/PlacementDrive");
+const Company = require("../models/Company");
 
 const createPlacementDrive = async (req, res) => {
   try {
@@ -18,6 +19,26 @@ const createPlacementDrive = async (req, res) => {
       status,
     } = req.body;
 
+    // Find company
+    const companyData = await Company.findById(company);
+
+    if (!companyData) {
+      return res.status(404).json({
+        message: "Company not found",
+      });
+    }
+
+    // Recruiter can create drive only for their own company
+    if (
+      req.user.role === "recruiter" &&
+      companyData.recruiter?.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        message: "You can only create drives for your assigned company",
+      });
+    }
+
+    // Create placement drive
     const drive = await PlacementDrive.create({
       company,
       jobTitle,
@@ -46,7 +67,6 @@ const createPlacementDrive = async (req, res) => {
   }
 };
 
-
 const getPlacementDrives = async (req, res) => {
   try {
     const drives = await PlacementDrive.find({
@@ -67,8 +87,6 @@ const getPlacementDrives = async (req, res) => {
     });
   }
 };
-
-
 
 module.exports = {
   createPlacementDrive,
