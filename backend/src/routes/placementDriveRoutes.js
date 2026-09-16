@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   createPlacementDrive,
+  getPlacementDrives,
 } = require("../controllers/placementDriveController");
 
 const protect = require("../middleware/authMiddleware");
@@ -13,6 +14,12 @@ router.post(
   protect,
   authorizeRoles("admin"),
   createPlacementDrive
+);
+router.get(
+  "/",
+  protect,
+  authorizeRoles("student"),
+  getPlacementDrives
 );
 
 module.exports = router;
