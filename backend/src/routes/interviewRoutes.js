@@ -4,7 +4,9 @@ const {
   scheduleInterview,
   getMyInterviews,
   updateInterviewStatus,
+  getRecruiterInterviews,
 } = require("../controllers/interviewController");
+
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
@@ -23,6 +25,12 @@ router.get(
   protect,
   authorizeRoles("student"),
   getMyInterviews
+);
+router.get(
+  "/recruiter",
+  protect,
+  authorizeRoles("recruiter"),
+  getRecruiterInterviews
 );
 
 router.patch(

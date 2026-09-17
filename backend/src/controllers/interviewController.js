@@ -233,9 +233,42 @@ const updateInterviewStatus = async (req, res) => {
     });
   }
 };
+const getRecruiterInterviews = async (req, res) => {
+  try {
+    const company = await Company.findOne({
+      recruiter: req.user.id,
+    });
+
+    if (!company) {
+      return res.status(404).json({
+        message: "No company assigned to this recruiter",
+      });
+    }
+
+    const interviews = await Interview.find({
+      company: company._id,
+    })
+      .populate("student", "rollNumber course branch cgpa skills resumeUrl")
+      .populate("drive", "jobTitle package location")
+      .populate("application", "status")
+      .sort({ scheduledAt: 1 });
+
+    return res.status(200).json({
+      count: interviews.length,
+      interviews,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch recruiter interviews",
+      error: error.message,
+    });
+  }
+};
+
 
 module.exports = {
   scheduleInterview,
   getMyInterviews,
   updateInterviewStatus,
+  getRecruiterInterviews,
 };

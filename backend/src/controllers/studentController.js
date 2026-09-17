@@ -59,7 +59,7 @@ const getStudentProfile = async (req, res) => {
   try {
     const profile = await StudentProfile.findOne({
       user: req.user.id,
-    });
+    }).populate("user", "name email");
 
     if (!profile) {
       return res.status(404).json({
@@ -161,8 +161,8 @@ const uploadResume = async (req, res) => {
     });
 
     const student = await StudentProfile.findOne({
-      user: req.user.id,
-    });
+  user: req.user.id,
+}).populate("user", "name email");
 
     if (!student) {
       return res.status(404).json({
