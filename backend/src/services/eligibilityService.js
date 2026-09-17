@@ -14,7 +14,6 @@ const checkTenthEligibility = (student, drive) => {
   return student.tenthPercentage >= drive.minimumTenthPercentage;
 };
 
-
 const checkTwelfthEligibility = (student, drive) => {
   if (drive.minimumTwelfthPercentage == null) {
     return true;
@@ -37,7 +36,6 @@ const checkSkillsEligibility = (student, drive) => {
   );
 };
 
-
 const checkEligibility = (student, drive) => {
   const checks = {
     cgpa: checkCgpaEligibility(student, drive),
@@ -55,7 +53,6 @@ const checkEligibility = (student, drive) => {
     checks,
   };
 };
-
 
 module.exports = {
   checkCgpaEligibility,

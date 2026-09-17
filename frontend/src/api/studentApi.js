@@ -19,3 +19,14 @@ export const getMyInterviews = async () => {
   const response = await api.get("/interviews");
   return response.data.interviews;
 };
+
+export const getMyOffers = async () => {
+  const response = await api.get("/offers");
+  return response.data.offers;
+};
+
+export const applyToDrive = async (driveId) => {
+  const response = await api.post(`/applications/${driveId}`);
+
+  return response.data;
+};
