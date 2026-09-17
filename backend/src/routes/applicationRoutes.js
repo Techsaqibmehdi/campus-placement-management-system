@@ -5,6 +5,7 @@ const {
   getMyApplications,
   getRecruiterApplications,
   updateApplicationStatus,
+  createOffer,
 } = require("../controllers/applicationController");
 
 const protect = require("../middleware/authMiddleware");
@@ -30,6 +31,12 @@ router.patch(
   protect,
   authorizeRoles("admin", "recruiter"),
   updateApplicationStatus
+);
+router.post(
+  "/:applicationId/offer",
+  protect,
+  authorizeRoles("admin", "recruiter"),
+  createOffer
 );
 router.post(
   "/:driveId",

@@ -8,6 +8,8 @@ const authRoutes = require("./routes/authRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const placementDriveRoutes = require("./routes/placementDriveRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
+const offerRoutes = require("./routes/offerRoutes");
+const interviewRoutes = require("./routes/interviewRoutes");
 
 const app = express();
 
@@ -20,7 +22,8 @@ app.use("/api/students", studentRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/drives", placementDriveRoutes);
 app.use("/api/applications", applicationRoutes);
-
+app.use("/api/offers", offerRoutes);
+app.use("/api/interviews", interviewRoutes);
 
 app.get("/", (req, res) => {
   res.json({

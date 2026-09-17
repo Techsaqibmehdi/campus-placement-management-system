@@ -1,9 +1,14 @@
-const checkOneOfferPolicy = (student) => {
-  if (student.hasOffer) {
-    return false;
-  }
+const Offer = require("../models/Offer");
 
-  return true;
+const checkOneOfferPolicy = async (studentId) => {
+  const existingOffer = await Offer.findOne({
+    student: studentId,
+    status: {
+      $in: ["active", "accepted"],
+    },
+  });
+
+  return !existingOffer;
 };
 
 module.exports = {

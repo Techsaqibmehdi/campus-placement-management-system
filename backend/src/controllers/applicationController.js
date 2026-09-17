@@ -2,6 +2,7 @@ const Application = require("../models/Application");
 const StudentProfile = require("../models/StudentProfile");
 const PlacementDrive = require("../models/PlacementDrive");
 const Company = require("../models/Company");
+const Offer = require("../models/Offer");
 
 const {
   checkEligibility,
@@ -52,7 +53,7 @@ const applyForDrive = async (req, res) => {
     }
 
     // Check one offer policy
-    const canApply = checkOneOfferPolicy(student);
+    const canApply = await checkOneOfferPolicy(student._id);
 
     if (!canApply) {
       return res.status(400).json({
@@ -271,9 +272,96 @@ const updateApplicationStatus = async (req, res) => {
     });
   }
 };
+
+const createOffer = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { joiningDate } = req.body;
+
+    // Find application
+    const application = await Application.findById(applicationId);
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found",
+      });
+    }
+
+    // Offer can only be created for selected candidates
+    if (application.status !== "selected") {
+      return res.status(400).json({
+        message: "Offer can only be created for a selected candidate",
+      });
+    }
+
+    // Find drive
+    const drive = await PlacementDrive.findById(
+      application.drive
+    );
+
+    if (!drive) {
+      return res.status(404).json({
+        message: "Placement drive not found",
+      });
+    }
+
+    // Find company
+    const company = await Company.findById(drive.company);
+
+    if (!company) {
+      return res.status(404).json({
+        message: "Company not found",
+      });
+    }
+
+    // Recruiter ownership check
+    if (
+      req.user.role === "recruiter" &&
+      company.recruiter?.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        message:
+          "You can only create offers for your assigned company",
+      });
+    }
+
+    // Check if offer already exists
+    const existingOffer = await Offer.findOne({
+      application: application._id,
+    });
+
+    if (existingOffer) {
+      return res.status(400).json({
+        message: "Offer already exists for this application",
+      });
+    }
+
+    // Create offer
+    const offer = await Offer.create({
+      application: application._id,
+      student: application.student,
+      company: company._id,
+      drive: drive._id,
+      jobTitle: drive.jobTitle,
+      package: drive.package,
+      joiningDate,
+    });
+
+    return res.status(201).json({
+      message: "Offer created successfully",
+      offer,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Offer creation failed",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   applyForDrive,
   getMyApplications,
   updateApplicationStatus,
   getRecruiterApplications,
+  createOffer,
 };
