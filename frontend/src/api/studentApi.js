@@ -30,3 +30,25 @@ export const applyToDrive = async (driveId) => {
 
   return response.data;
 };
+
+export const updateStudentProfile = async (profileData) => {
+  const response = await api.put(
+    "/students/profile",
+    profileData
+  );
+
+  return response.data.profile;
+};
+
+export const uploadStudentResume = async (file) => {
+  const formData = new FormData();
+
+  formData.append("resume", file);
+
+  const response = await api.post(
+    "/students/resume",
+    formData
+  );
+
+  return response.data;
+};

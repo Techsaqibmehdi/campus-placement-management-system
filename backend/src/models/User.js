@@ -26,6 +26,31 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "recruiter", "admin"],
       default: "student",
     },
+
+    // Student registration details
+    college: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    rollNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    course: {
+      type: String,
+      enum: ["BCA", "MCA", "B.Tech", "M.Tech", "MBA"],
+      default: null,
+    },
+
+    branch: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

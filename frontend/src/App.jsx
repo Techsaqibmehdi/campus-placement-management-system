@@ -10,6 +10,8 @@ import {
   getMyInterviews,
   getMyOffers,
   applyToDrive,
+  updateStudentProfile,
+  uploadStudentResume,
 } from "./api/studentApi";
 
 function Home() {
@@ -109,6 +111,21 @@ function StudentDashboard() {
   const [applyLoading, setApplyLoading] = useState(false);
 const [applyMessage, setApplyMessage] = useState("");
 const [activeSection, setActiveSection] = useState(null);
+const [resumeFile, setResumeFile] = useState(null);
+const [resumeLoading, setResumeLoading] = useState(false);
+
+const [editProfile, setEditProfile] = useState({
+  rollNumber: "",
+  course: "",
+  branch: "",
+  cgpa: "",
+  tenthPercentage: "",
+  twelfthPercentage: "",
+  backlogs: "",
+  skills: "",
+  projects: "",
+  internships: "",
+});
 
   const fetchDashboardData = async () => {
     try {
@@ -180,7 +197,79 @@ const handleApply = async () => {
     setApplyLoading(false);
   }
 };
- return (
+const handleUpdateProfile = async () => {
+  try {
+    const updatedProfile = await updateStudentProfile({
+      rollNumber: editProfile.rollNumber,
+      course: editProfile.course,
+      branch: editProfile.branch,
+      cgpa: Number(editProfile.cgpa),
+      tenthPercentage: Number(
+        editProfile.tenthPercentage
+      ),
+      twelfthPercentage: Number(
+        editProfile.twelfthPercentage
+      ),
+      backlogs: Number(editProfile.backlogs),
+
+      skills: editProfile.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean),
+
+      projects: editProfile.projects
+        .split(",")
+        .map((project) => project.trim())
+        .filter(Boolean),
+
+      internships: editProfile.internships
+        .split(",")
+        .map((internship) => internship.trim())
+        .filter(Boolean),
+    });
+
+    setProfile(updatedProfile);
+
+    setActiveSection(null);
+
+    alert("Profile updated successfully");
+
+  } catch (error) {
+    alert(
+      error.response?.data?.message ||
+        "Failed to update profile"
+    );
+  }
+};
+const handleResumeUpload = async () => {
+  if (!resumeFile) {
+    alert("Please select a PDF resume");
+    return;
+  }
+
+  try {
+    setResumeLoading(true);
+
+    const response = await uploadStudentResume(resumeFile);
+
+    setProfile((prev) => ({
+      ...prev,
+      resumeUrl: response.resumeUrl,
+    }));
+
+    setResumeFile(null);
+
+    alert("Resume uploaded successfully");
+  } catch (error) {
+    alert(
+      error.response?.data?.message ||
+        "Failed to upload resume"
+    );
+  } finally {
+    setResumeLoading(false);
+  }
+};
+return (
   <div className="dashboard">
 
     {/* ================= DRIVE DETAILS ================= */}
@@ -360,103 +449,465 @@ const handleApply = async () => {
 
             </div>
 
+            {/* Edit Profile Button */}
+
+            <button
+              className="drive-button"
+              onClick={() => {
+
+                setEditProfile({
+                  rollNumber: profile.rollNumber || "",
+                  course: profile.course || "",
+                  branch: profile.branch || "",
+                  cgpa: profile.cgpa || "",
+                  tenthPercentage:
+                    profile.tenthPercentage || "",
+                  twelfthPercentage:
+                    profile.twelfthPercentage || "",
+                  backlogs:
+                    profile.backlogs ?? "",
+                  skills:
+                    profile.skills?.join(", ") || "",
+                  projects:
+                    profile.projects?.join(", ") || "",
+                  internships:
+                    profile.internships?.join(", ") || "",
+                });
+
+                setActiveSection(
+                  activeSection === "profile"
+                    ? null
+                    : "profile"
+                );
+
+              }}
+            >
+              {activeSection === "profile"
+                ? "← Back to Dashboard"
+                : "Edit Profile"}
+            </button>
+
           </div>
+        )}
+
+
+        {/* ================= EDIT PROFILE ================= */}
+
+        {activeSection === "profile" && profile && (
+
+          <div className="section">
+
+            <h2 className="section-title">
+              Edit Profile
+            </h2>
+
+            <div className="profile-form">
+
+              {/* Roll Number */}
+
+              <div className="form-group">
+
+                <label>
+                  Roll Number
+                </label>
+
+                <input
+                  type="text"
+                  value={editProfile.rollNumber}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      rollNumber: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* Course */}
+
+              <div className="form-group">
+
+                <label>
+                  Course
+                </label>
+
+                <input
+                  type="text"
+                  value={editProfile.course}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      course: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* Branch */}
+
+              <div className="form-group">
+
+                <label>
+                  Branch
+                </label>
+
+                <input
+                  type="text"
+                  value={editProfile.branch}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      branch: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* CGPA */}
+
+              <div className="form-group">
+
+                <label>
+                  CGPA
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
+                  value={editProfile.cgpa}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      cgpa: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* 10th Percentage */}
+
+              <div className="form-group">
+
+                <label>
+                  10th Percentage
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={editProfile.tenthPercentage}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      tenthPercentage:
+                        e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* 12th Percentage */}
+
+              <div className="form-group">
+
+                <label>
+                  12th Percentage
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={editProfile.twelfthPercentage}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      twelfthPercentage:
+                        e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* Backlogs */}
+
+              <div className="form-group">
+
+                <label>
+                  Backlogs
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  value={editProfile.backlogs}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      backlogs: e.target.value,
+                    })
+                  }
+                />
+
+              </div>
+
+
+              {/* Skills */}
+
+              <div className="form-group">
+
+                <label>
+                  Skills
+                </label>
+
+                <input
+                  type="text"
+                  value={editProfile.skills}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      skills: e.target.value,
+                    })
+                  }
+                  placeholder="Java, React, Node.js"
+                />
+
+              </div>
+
+
+              {/* Projects */}
+
+              <div className="form-group">
+
+                <label>
+                  Projects
+                </label>
+
+                <textarea
+                  value={editProfile.projects}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      projects: e.target.value,
+                    })
+                  }
+                  placeholder="Project 1, Project 2"
+                />
+
+              </div>
+
+
+              {/* Internships */}
+
+              <div className="form-group">
+
+                <label>
+                  Internships
+                </label>
+
+                <textarea
+                  value={editProfile.internships}
+                  onChange={(e) =>
+                    setEditProfile({
+                      ...editProfile,
+                      internships: e.target.value,
+                    })
+                  }
+                  placeholder="Internship 1, Internship 2"
+                />
+
+              </div>
+
+
+              {/* Form Buttons */}
+
+              <div className="form-group">
+  <label>Resume (PDF)</label>
+
+  <input
+    type="file"
+    accept=".pdf,application/pdf"
+    onChange={(e) => setResumeFile(e.target.files[0])}
+  />
+
+  <button
+    type="button"
+    className="drive-button"
+    onClick={handleResumeUpload}
+    disabled={resumeLoading}
+  >
+    {resumeLoading ? "Uploading..." : "Upload Resume"}
+  </button>
+
+  {profile?.resumeUrl && (
+  <div>
+    <a
+      href={profile.resumeUrl}
+      target="_blank"
+      rel="noreferrer"
+    >
+      View Current Resume
+    </a>
+
+    <br />
+
+    <a
+      href={profile.resumeUrl}
+      download
+      target="_blank"
+      rel="noreferrer"
+    >
+      Download Resume
+    </a>
+  </div>
+)}
+</div>
+
+              <div className="form-actions">
+
+                <button
+                  className="drive-button"
+                  onClick={() =>
+                    setActiveSection(null)
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+  className="drive-button"
+  onClick={handleUpdateProfile}
+>
+  Save Changes
+</button>
+
+              </div>
+
+            </div>
+
+          </div>
+
         )}
 
 
         {/* ================= SUMMARY CARDS ================= */}
 
-        <div className="summary-grid">
+        {activeSection !== "profile" && (
 
-          {/* Applications */}
+          <div className="summary-grid">
 
-          <div
-            className="summary-card clickable"
-            onClick={() =>
-              setActiveSection(
-                activeSection === "applications"
-                  ? null
-                  : "applications"
-              )
-            }
-          >
+            {/* Applications */}
 
-            <h3>Applications</h3>
+            <div
+              className="summary-card clickable"
+              onClick={() =>
+                setActiveSection(
+                  activeSection === "applications"
+                    ? null
+                    : "applications"
+                )
+              }
+            >
 
-            <strong>
-              {applications.length}
-            </strong>
+              <h3>
+                Applications
+              </h3>
 
-            <span>
-              {activeSection === "applications"
-                ? "← Back to Placement Drives"
-                : "View Applications"}
-            </span>
+              <strong>
+                {applications.length}
+              </strong>
+
+              <span>
+                {activeSection === "applications"
+                  ? "← Back to Placement Drives"
+                  : "View Applications"}
+              </span>
+
+            </div>
+
+
+            {/* Interviews */}
+
+            <div
+              className="summary-card clickable"
+              onClick={() =>
+                setActiveSection(
+                  activeSection === "interviews"
+                    ? null
+                    : "interviews"
+                )
+              }
+            >
+
+              <h3>
+                Interviews
+              </h3>
+
+              <strong>
+                {interviews.length}
+              </strong>
+
+              <span>
+                {activeSection === "interviews"
+                  ? "← Back to Placement Drives"
+                  : "View Interviews"}
+              </span>
+
+            </div>
+
+
+            {/* Offers */}
+
+            <div
+              className="summary-card clickable"
+              onClick={() =>
+                setActiveSection(
+                  activeSection === "offers"
+                    ? null
+                    : "offers"
+                )
+              }
+            >
+
+              <h3>
+                Offers
+              </h3>
+
+              <strong>
+                {offers.length}
+              </strong>
+
+              <span>
+                {activeSection === "offers"
+                  ? "← Back to Placement Drives"
+                  : "View Offers"}
+              </span>
+
+            </div>
 
           </div>
 
-
-          {/* Interviews */}
-
-          <div
-            className="summary-card clickable"
-            onClick={() =>
-              setActiveSection(
-                activeSection === "interviews"
-                  ? null
-                  : "interviews"
-              )
-            }
-          >
-
-            <h3>Interviews</h3>
-
-            <strong>
-              {interviews.length}
-            </strong>
-
-            <span>
-              {activeSection === "interviews"
-                ? "← Back to Placement Drives"
-                : "View Interviews"}
-            </span>
-
-          </div>
+        )}
 
 
-          {/* Offers */}
-
-          <div
-            className="summary-card clickable"
-            onClick={() =>
-              setActiveSection(
-                activeSection === "offers"
-                  ? null
-                  : "offers"
-              )
-            }
-          >
-
-            <h3>Offers</h3>
-
-            <strong>
-              {offers.length}
-            </strong>
-
-            <span>
-              {activeSection === "offers"
-                ? "← Back to Placement Drives"
-                : "View Offers"}
-            </span>
-
-          </div>
-
-        </div>
-
-
-        {/* ================================================= */}
-        {/* ================= MY APPLICATIONS =============== */}
-        {/* ================================================= */}
+        {/* ================= MY APPLICATIONS ================= */}
 
         {activeSection === "applications" && (
 
@@ -528,9 +979,7 @@ const handleApply = async () => {
         )}
 
 
-        {/* ================================================= */}
         {/* ================= MY INTERVIEWS ================= */}
-        {/* ================================================= */}
 
         {activeSection === "interviews" && (
 
@@ -594,8 +1043,10 @@ const handleApply = async () => {
 
                     {interview.mode === "online" &&
                       interview.meetingLink && (
+
                         <p>
                           <strong>Meeting:</strong>{" "}
+
                           <a
                             href={interview.meetingLink}
                             target="_blank"
@@ -604,15 +1055,18 @@ const handleApply = async () => {
                             Join Interview
                           </a>
                         </p>
-                      )}
+
+                    )}
 
                     {interview.mode === "offline" &&
                       interview.location && (
+
                         <p>
                           <strong>Location:</strong>{" "}
                           {interview.location}
                         </p>
-                      )}
+
+                    )}
 
                     <span
                       className={`status-badge status-${interview.status}`}
@@ -621,10 +1075,12 @@ const handleApply = async () => {
                     </span>
 
                     {interview.feedback && (
+
                       <p>
                         <strong>Feedback:</strong>{" "}
                         {interview.feedback}
                       </p>
+
                     )}
 
                   </div>
@@ -640,9 +1096,7 @@ const handleApply = async () => {
         )}
 
 
-        {/* ================================================= */}
-        {/* ================= MY OFFERS ===================== */}
-        {/* ================================================= */}
+        {/* ================= MY OFFERS ================= */}
 
         {activeSection === "offers" && (
 
@@ -720,9 +1174,7 @@ const handleApply = async () => {
         )}
 
 
-        {/* ================================================= */}
-        {/* =============== AVAILABLE DRIVES ================ */}
-        {/* ================================================= */}
+        {/* ================= AVAILABLE PLACEMENT DRIVES ================= */}
 
         {activeSection === null && (
 

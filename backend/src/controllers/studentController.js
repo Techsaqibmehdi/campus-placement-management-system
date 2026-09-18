@@ -145,7 +145,7 @@ const uploadResume = async (req, res) => {
         {
           folder: "campus-placement/resumes",
           resource_type: "raw",
-          public_id: `${req.user.id}-resume`,
+          public_id: `${req.user.id}-resume.pdf`,
           overwrite: true,
         },
         (error, result) => {

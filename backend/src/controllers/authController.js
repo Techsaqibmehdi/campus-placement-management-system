@@ -4,9 +4,57 @@ const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      name,
+      email,
+      password,
+      college,
+      course,
+      branch,
+      rollNumber,
+    } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    // Required fields validation
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !college ||
+      !course ||
+      !branch ||
+      !rollNumber
+    ) {
+      return res.status(400).json({
+        message: "All registration fields are required",
+      });
+    }
+
+    // College validation
+    if (college !== "KIET Group of Institutions") {
+      return res.status(400).json({
+        message: "Invalid college",
+      });
+    }
+
+    // Course validation
+    const allowedCourses = [
+      "BCA",
+      "MCA",
+      "B.Tech",
+      "M.Tech",
+      "MBA",
+    ];
+
+    if (!allowedCourses.includes(course)) {
+      return res.status(400).json({
+        message: "Invalid course",
+      });
+    }
+
+    // Email check
+    const existingUser = await User.findOne({
+      email: email.toLowerCase(),
+    });
 
     if (existingUser) {
       return res.status(400).json({
@@ -14,22 +62,43 @@ const registerUser = async (req, res) => {
       });
     }
 
+    // Roll number check
+    const existingRollNumber = await User.findOne({
+      rollNumber,
+    });
+
+    if (existingRollNumber) {
+      return res.status(400).json({
+        message: "Roll number already registered",
+      });
+    }
+
+    // Password hashing
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Student account creation
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
-      role,
+      role: "student",
+      college: "KIET Group of Institutions",
+      course,
+      branch,
+      rollNumber,
     });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Student registered successfully",
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        college: user.college,
+        course: user.course,
+        branch: user.branch,
+        rollNumber: user.rollNumber,
       },
     });
   } catch (error) {
