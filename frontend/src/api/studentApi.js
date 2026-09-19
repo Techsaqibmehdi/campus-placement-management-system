@@ -52,3 +52,19 @@ export const uploadStudentResume = async (file) => {
 
   return response.data;
 };
+
+export const deleteStudentResume = async (resumeId) => {
+  const response = await api.delete(
+    `/students/resume/${resumeId}`
+  );
+
+  return response.data;
+};
+
+export const setPrimaryStudentResume = async (resumeId) => {
+  const response = await api.patch(
+    `/students/resume/${resumeId}/primary`
+  );
+
+  return response.data;
+};
