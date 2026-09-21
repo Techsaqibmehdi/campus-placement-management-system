@@ -26,6 +26,18 @@ const interviewSchema = new mongoose.Schema(
       required: true,
     },
 
+    roundName: {
+      type: String,
+      trim: true,
+      default: "Technical Interview",
+    },
+
+    interviewer: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     scheduledAt: {
       type: Date,
       required: true,
@@ -51,6 +63,19 @@ const interviewSchema = new mongoose.Schema(
       type: String,
       enum: ["scheduled", "completed", "cancelled"],
       default: "scheduled",
+    },
+
+    score: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+    },
+
+    result: {
+      type: String,
+      enum: ["pending", "passed", "failed", "on_hold"],
+      default: "pending",
     },
 
     feedback: {

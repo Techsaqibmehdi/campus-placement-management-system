@@ -4,6 +4,7 @@ const Interview = require("../models/Interview");
 const Offer = require("../models/Offer");
 const Company = require("../models/Company");
 const PlacementDrive = require("../models/PlacementDrive");
+const User = require("../models/User");
 
 const getPlacementAnalytics = async (req, res) => {
   try {
@@ -17,6 +18,11 @@ const getPlacementAnalytics = async (req, res) => {
       totalOffers,
       placedStudents,
       packageStats,
+      activeRecruiters,
+      pendingRecruiters,
+      activeDrives,
+      pendingDrives,
+      allActiveOffers,
     ] = await Promise.all([
       StudentProfile.countDocuments(),
 
@@ -72,6 +78,18 @@ const getPlacementAnalytics = async (req, res) => {
           },
         },
       ]),
+
+      User.countDocuments({ role: "recruiter", status: "active" }),
+
+      User.countDocuments({ role: "recruiter", status: "pending" }),
+
+      PlacementDrive.countDocuments({ status: "open" }),
+
+      PlacementDrive.countDocuments({ status: "pending_approval" }),
+
+      Offer.find({ status: { $in: ["active", "accepted"] } })
+        .select("package")
+        .sort({ package: 1 }),
     ]);
 
     const placedStudentCount =
@@ -201,10 +219,49 @@ const companyStats = await Offer.aggregate([
         ? Number(packageStats[0].averagePackage.toFixed(2))
         : 0;
 
+    // Calculate Median Package
+    let medianPackage = 0;
+    if (allActiveOffers && allActiveOffers.length > 0) {
+      const mid = Math.floor(allActiveOffers.length / 2);
+      medianPackage =
+        allActiveOffers.length % 2 !== 0
+          ? allActiveOffers[mid].package
+          : Number(((allActiveOffers[mid - 1].package + allActiveOffers[mid].package) / 2).toFixed(2));
+    }
+
+    // Package Tier Distribution
+    const tiers = {
+      "< 4 LPA": 0,
+      "4 - 7 LPA": 0,
+      "7 - 12 LPA": 0,
+      "12+ LPA": 0,
+    };
+
+    allActiveOffers.forEach((off) => {
+      const pkg = off.package;
+      if (pkg < 4) tiers["< 4 LPA"]++;
+      else if (pkg < 7) tiers["4 - 7 LPA"]++;
+      else if (pkg < 12) tiers["7 - 12 LPA"]++;
+      else tiers["12+ LPA"]++;
+    });
+
+    const packageDistribution = Object.entries(tiers).map(([range, count]) => ({
+      range,
+      count,
+      percentage:
+        allActiveOffers.length > 0
+          ? Number(((count / allActiveOffers.length) * 100).toFixed(1))
+          : 0,
+    }));
+
     return res.status(200).json({
       totalStudents,
       totalCompanies,
       totalDrives,
+      activeDrives,
+      pendingDrives,
+      activeRecruiters,
+      pendingRecruiters,
       totalApplications,
       totalShortlisted,
       totalInterviews,
@@ -213,6 +270,8 @@ const companyStats = await Offer.aggregate([
       placementRate: `${placementRate}%`,
       highestPackage,
       averagePackage,
+      medianPackage,
+      packageDistribution,
       branchStats,
       companyStats,
     });

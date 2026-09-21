@@ -110,17 +110,30 @@ if (mode === "offline" && !location) {
       });
     }
 
+    const { roundName, interviewer } = req.body;
+
     // Create interview
     const interview = await Interview.create({
       application: application._id,
       student: application.student,
       drive: drive._id,
       company: company._id,
+      roundName: roundName || "Technical Interview",
+      interviewer: interviewer || "",
       scheduledAt,
       mode,
       meetingLink: mode === "online" ? meetingLink : null,
       location: mode === "offline" ? location : null,
     });
+
+    // Automatically transition application status to 'interview'
+    application.status = "interview";
+    application.statusHistory.push({
+      status: "interview",
+      changedAt: new Date(),
+      comments: `Interview round scheduled: ${roundName || "Technical Interview"} by recruiter`,
+    });
+    await application.save();
 
     return res.status(201).json({
       message: "Interview scheduled successfully",
@@ -233,6 +246,77 @@ const updateInterviewStatus = async (req, res) => {
     });
   }
 };
+
+const recordInterviewResult = async (req, res) => {
+  try {
+    const { score, result, feedback } = req.body;
+    const interview = await Interview.findById(req.params.interviewId);
+
+    if (!interview) {
+      return res.status(404).json({
+        message: "Interview not found",
+      });
+    }
+
+    const company = await Company.findById(interview.company);
+    if (
+      req.user.role === "recruiter" &&
+      company.recruiter?.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        message: "You can only record evaluation for your company's interviews",
+      });
+    }
+
+    if (score !== undefined) {
+      interview.score = Number(score);
+    }
+    if (result) {
+      interview.result = result;
+    }
+    if (feedback !== undefined) {
+      interview.feedback = feedback;
+    }
+
+    interview.status = "completed";
+    await interview.save();
+
+    // If passed or failed, sync application status
+    if (interview.application) {
+      const app = await Application.findById(interview.application);
+      if (app) {
+        if (result === "passed") {
+          app.status = "selected";
+          app.statusHistory.push({
+            status: "selected",
+            changedAt: new Date(),
+            comments: `Candidate cleared interview (${interview.roundName}). Score: ${score ?? "N/A"}`,
+          });
+          await app.save();
+        } else if (result === "failed") {
+          app.status = "rejected";
+          app.statusHistory.push({
+            status: "rejected",
+            changedAt: new Date(),
+            comments: `Candidate did not clear interview (${interview.roundName})`,
+          });
+          await app.save();
+        }
+      }
+    }
+
+    return res.status(200).json({
+      message: "Interview evaluation and results recorded successfully",
+      interview,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to record interview result",
+      error: error.message,
+    });
+  }
+};
+
 const getRecruiterInterviews = async (req, res) => {
   try {
     const company = await Company.findOne({
@@ -248,9 +332,15 @@ const getRecruiterInterviews = async (req, res) => {
     const interviews = await Interview.find({
       company: company._id,
     })
-      .populate("student", "rollNumber course branch cgpa skills resumeUrl")
+      .populate({
+        path: "student",
+        populate: {
+          path: "user",
+          select: "name email college rollNumber course branch",
+        },
+      })
       .populate("drive", "jobTitle package location")
-      .populate("application", "status")
+      .populate("application", "status resume")
       .sort({ scheduledAt: 1 });
 
     return res.status(200).json({
@@ -265,10 +355,10 @@ const getRecruiterInterviews = async (req, res) => {
   }
 };
 
-
 module.exports = {
   scheduleInterview,
   getMyInterviews,
   updateInterviewStatus,
+  recordInterviewResult,
   getRecruiterInterviews,
 };

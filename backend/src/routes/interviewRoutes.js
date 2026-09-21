@@ -4,6 +4,7 @@ const {
   scheduleInterview,
   getMyInterviews,
   updateInterviewStatus,
+  recordInterviewResult,
   getRecruiterInterviews,
 } = require("../controllers/interviewController");
 
@@ -31,6 +32,13 @@ router.get(
   protect,
   authorizeRoles("recruiter"),
   getRecruiterInterviews
+);
+
+router.patch(
+  "/:interviewId/result",
+  protect,
+  authorizeRoles("admin", "recruiter"),
+  recordInterviewResult
 );
 
 router.patch(

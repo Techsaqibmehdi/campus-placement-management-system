@@ -27,6 +27,12 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
+    status: {
+      type: String,
+      enum: ["active", "pending", "suspended"],
+      default: "active",
+    },
+
     // Student registration details
     college: {
       type: String,
@@ -42,11 +48,36 @@ const userSchema = new mongoose.Schema(
 
     course: {
       type: String,
-      enum: ["BCA", "MCA", "B.Tech", "M.Tech", "MBA"],
+      trim: true,
       default: null,
     },
 
     branch: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    // Recruiter registration details
+    companyName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    companyWebsite: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    designation: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    contactNumber: {
       type: String,
       trim: true,
       default: null,

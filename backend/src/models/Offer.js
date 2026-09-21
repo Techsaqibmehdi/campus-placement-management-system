@@ -39,6 +39,23 @@ const offerSchema = new mongoose.Schema(
       min: 0,
     },
 
+    baseSalary: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    variableSalary: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    offerLetterUrl: {
+      type: String,
+      default: "",
+    },
+
     joiningDate: {
       type: Date,
     },

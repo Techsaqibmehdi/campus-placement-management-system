@@ -10,6 +10,13 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 const router = express.Router();
 
 router.get(
+  "/",
+  protect,
+  authorizeRoles("admin"),
+  getPlacementAnalytics
+);
+
+router.get(
   "/placement",
   protect,
   authorizeRoles("admin"),
